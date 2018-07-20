@@ -220,6 +220,16 @@ export interface ArrowRendererProps {
     isOpen: boolean;
 }
 
+export class Value<TValue = OptionValues> extends React.Component<ValueComponentProps<TValue>> {
+renderLabel(): JSX.Element;
+renderRemoveIcon(): JSX.Element;
+handleMouseDown(event: React.MouseEvent<HTMLElement>): void;
+onRemove(event: React.MouseEvent<HTMLElement>): void;
+handleTouchEndRemove(event: React.TouchEvent<HTMLElement>): void;
+handleTouchMove(event: React.TouchEvent<HTMLElement>): void;
+handleTouchStart(event: React.TouchEvent<HTMLElement>): void;
+}
+
 export interface ValueComponentProps<TValue = OptionValues> {
     disabled: ReactSelectProps<TValue>['disabled'];
     id: string;
