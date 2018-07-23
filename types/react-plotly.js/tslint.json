@@ -1,7 +1,6 @@
 {
     "extends": "dtslint/dt.json",
     "rules": {
-        // TODO
-        "no-namespace": false
+        "indent": [true, "spaces", 4]
     }
 }
