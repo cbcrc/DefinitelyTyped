@@ -57,7 +57,11 @@ export interface ReactSelectProps<TValue = OptionValues> {
     /**
      * @see https://react-select.com/components
      */
-    components?: Partial<SelectComponents>;    
+    components?: Partial<SelectComponents>;  
+     /**
+     * Prefix to add className & use styled-component with react-select
+     */  
+    classNamePrefix?: string;
     /**
      * whether selected options still appear on the menu
      */
