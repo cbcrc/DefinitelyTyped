@@ -1,4 +1,5 @@
 {
+    "version":"0.33.0",
     "private": true,
     "dependencies": {
         "immutable": "^3.8.2"

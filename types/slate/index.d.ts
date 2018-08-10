@@ -246,10 +246,16 @@ export class Inline extends BaseNode {
   toJSON(): InlineJSON;
 }
 
+export interface LeafJSON {
+  marks?: MarkJSON[];
+  text: string;
+}
+
 export interface Leaf {
   marks?: Mark[];
   text: string;
 }
+
 
 export interface TextProperties {
   key?: string;
@@ -259,7 +265,7 @@ export interface TextProperties {
 export interface TextJSON {
   key?: string;
   characters?: Character[];
-  leaves: Leaf[];
+  leaves: LeafJSON[];
   object: 'text';
 }
 
