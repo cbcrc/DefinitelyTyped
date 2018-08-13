@@ -1,5 +1,10 @@
 import * as React from 'react';
 
+export interface IOption {
+  label: string;
+  value: any;
+}
+
 export type OptionsType<OptionType> = OptionType[];
 
 export interface GroupType<OptionType> {

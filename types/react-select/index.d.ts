@@ -19,3 +19,5 @@ export { createFilter } from './lib/filters';
 export { default as makeAnimated } from './lib/animated/index';
 export { components } from './lib/components/index';
 export { mergeStyles } from './lib/styles';
+
+export * from './lib/types'
