@@ -1,3 +1,5 @@
+// tslint:disable:interface-over-type-literal
+
 import * as React from "react";
 import { Environment, Network, RecordSource, Store, ConnectionHandler, FragmentReference } from "relay-runtime";
 
@@ -11,7 +13,7 @@ import {
     QueryRenderer,
     RelayRefetchProp,
     RelayPaginationProp,
-    RelayProp
+    RelayProp,
 } from "react-relay";
 
 // ~~~~~~~~~~~~~~~~~~~~~
@@ -28,16 +30,33 @@ const modernEnvironment = new Environment({ network, store });
 // ~~~~~~~~~~~~~~~~~~~~~
 // Modern QueryRenderer
 // ~~~~~~~~~~~~~~~~~~~~~
-const MyQueryRenderer = (props: { name: string, show: boolean }) => (
-    <QueryRenderer
+
+// Artifact produced by relay-compiler-language-typescript
+type MyQueryRendererVariables = {
+    pageID: string;
+};
+type MyQueryRendererResponse = {
+    name: string;
+};
+type MyQueryRenderer = {
+    variables: MyQueryRendererVariables;
+    response: MyQueryRendererResponse;
+};
+
+const MyQueryRenderer = (props: { name: string; show: boolean }) => (
+    <QueryRenderer<MyQueryRenderer>
         environment={modernEnvironment}
-        query={props.show ? graphql`
-            query ExampleQuery($pageID: ID!) {
-                page(id: $pageID) {
-                    name
-                }
-            }
-        ` : null}
+        query={
+            props.show
+                ? graphql`
+                      query ExampleQuery($pageID: ID!) {
+                          page(id: $pageID) {
+                              name
+                          }
+                      }
+                  `
+                : null
+        }
         variables={{
             pageID: "110798995619330",
         }}
@@ -62,7 +81,7 @@ const MyEmptyQueryRenderer = () => (
             if (error) {
                 return <div>{error.message}</div>;
             } else if (props) {
-                throw new Error('This code path should never be hit');
+                throw new Error("This code path should never be hit");
             }
             return <div>Loading</div>;
         }}
@@ -78,7 +97,6 @@ type StoryLike = (storyID: string) => void;
 // Artifact produced by relay-compiler-language-typescript
 declare const _Story_story$ref: unique symbol;
 type Story_story$ref = typeof _Story_story$ref;
-// tslint:disable-next-line:interface-over-type-literal
 type Story_story = {
     readonly id: string;
     readonly text: string;
@@ -100,7 +118,7 @@ const Story = (() => {
 
     class Story extends React.Component<Props> {
         state = {
-            isLoading: false
+            isLoading: false,
         };
 
         componentDidMount() {
@@ -109,9 +127,14 @@ const Story = (() => {
 
         handleRefresh() {
             this.setState({ isLoading: true });
-            this.props.relay.refetch({ id: this.props.story.id }, {}, error => {
-                this.setState({ isLoading: false });
-            }, { force: true });
+            this.props.relay.refetch(
+                { id: this.props.story.id },
+                {},
+                error => {
+                    this.setState({ isLoading: false });
+                },
+                { force: true }
+            );
         }
 
         render() {
@@ -162,16 +185,22 @@ const Story = (() => {
 // Artifact produced by relay-compiler-language-typescript
 declare const _FeedStories_feed$ref: unique symbol;
 type FeedStories_feed$ref = typeof _FeedStories_feed$ref;
-// tslint:disable-next-line:interface-over-type-literal
+declare const _FeedStory_edges$ref: unique symbol;
+type FeedStory_edges$ref = typeof _FeedStory_edges$ref;
 type FeedStories_feed = {
     readonly edges: ReadonlyArray<{
         readonly node: {
             readonly id: string;
             readonly " $fragmentRefs": Story_story$ref & FeedStories_feed$ref;
         };
+        readonly " $fragmentRefs": FeedStory_edges$ref;
     }>;
     readonly " $refType": FeedStories_feed$ref;
 };
+type FeedStory_edges = ReadonlyArray<{
+    readonly publishedAt: string;
+    readonly " $refType": FeedStory_edges$ref;
+}>;
 
 const Feed = (() => {
     interface Props {
@@ -181,6 +210,18 @@ const Feed = (() => {
         ignoreMe?: {};
     }
 
+    const FeedStoryEdges: React.SFC<{ edges: FeedStory_edges }> = ({ edges }) => (
+        <div>{edges.map(({ publishedAt }) => publishedAt).join(", ")}</div>
+    );
+
+    const FeedStoryEdgesFragmentContainer = createFragmentContainer(FeedStoryEdges, {
+        edges: graphql`
+            fragment FeedStory_edges on FeedStoryEdge @relay(plural: true) {
+                publishedAt
+            }
+        `,
+    });
+
     const FeedStories: React.SFC<Props> = ({ feed, onStoryLike, relay }) => {
         // TODO: Getting env here for no good reason other than needing to test it works.
         //       If you have a good relavant example, please update!
@@ -188,24 +229,27 @@ const Feed = (() => {
         const stories = feed.edges.map(edge => {
             return <Story story={edge.node} key={edge.node.id} onLike={onStoryLike} />;
         });
-        return <div>{stories}</div>;
+        return (
+            <div>
+                {stories}
+                <span>{<FeedStoryEdgesFragmentContainer edges={feed.edges} />}</span>
+            </div>
+        );
     };
 
-    const FeedFragmentContainer = createFragmentContainer(
-        FeedStories,
-        {
-            feed: graphql`
-                fragment FeedStories_feed on Feed {
-                    edges {
-                        node {
-                            id
-                            ...Story_story
-                        }
+    const FeedFragmentContainer = createFragmentContainer(FeedStories, {
+        feed: graphql`
+            fragment FeedStories_feed on Feed {
+                edges {
+                    node {
+                        id
+                        ...Story_story
                     }
+                    ...FeedStoryEdges_feed
                 }
-            `,
-        }
-    );
+            }
+        `,
+    });
 
     function doesNotRequireRelayPropToBeProvided() {
         const onStoryLike = (id: string) => console.log(`Liked story #${id}`);
@@ -223,7 +267,6 @@ const Feed = (() => {
 // Artifact produced by relay-compiler-language-typescript
 declare const _UserFeed_user$ref: unique symbol;
 type UserFeed_user$ref = typeof _UserFeed_user$ref;
-// tslint:disable-next-line:interface-over-type-literal
 type UserFeed_user = {
     readonly feed: {
         readonly pageInfo: {
@@ -290,8 +333,7 @@ type UserFeed_user = {
         {
             direction: "forward",
             getConnectionFromProps(props) {
-                // TODO: Fix requirement to have `edges` and both `pageInfo` details for forward and backward pagination
-                return props.user && props.user.feed as any;
+                return props.user && props.user.feed;
             },
             getFragmentVariables(prevVars, totalCount) {
                 return {
@@ -341,7 +383,7 @@ export const mutation = graphql`
 export const optimisticResponse = {
     markReadNotification: {
         notification: {
-            seenState: "SEEN",
+            seenState: "SEEN" as "SEEN",
         },
     },
 };
@@ -377,28 +419,49 @@ export const configs = [
 ];
 
 function markNotificationAsRead(source: string, storyID: string) {
-    const variables = {
-        input: {
-            source,
-            storyID,
-        },
+    // Artifact produced by relay-compiler-language-typescript
+    type MyMutationVariables = {
+        readonly input: {
+            readonly source: string;
+            readonly storyID: string;
+        };
+    };
+    type MyMutationResponse = {
+        readonly markReadNotification: {
+            readonly notification: {
+                readonly seenState: "SEEN" | "UNSEEN";
+            };
+        };
+    };
+    type MyMutation = {
+        readonly variables: MyMutationVariables;
+        readonly response: MyMutationResponse;
     };
 
-    commitMutation(modernEnvironment, {
+    commitMutation<MyMutation>(modernEnvironment, {
         configs,
         mutation,
         optimisticResponse,
-        variables,
+        variables: {
+            input: {
+                source,
+                storyID,
+            },
+        },
         onCompleted: (response, errors) => {
-            console.log("Response received from server.");
+            if (errors) {
+                console.log(`Errors received from server: ${errors.map(error => error.message).join(", ")}`);
+            } else {
+                console.log(`Response received from server: ${response.markReadNotification.notification.seenState}`);
+            }
         },
         onError: err => console.error(err),
         updater: (store, data) => {
-            const field = store.get(storyID);
-            if (field) {
-                field.setValue(data.story, "story");
+            const story = store.get(storyID);
+            if (story) {
+                story.setValue(data.markReadNotification.notification.seenState, "seenState");
             }
-        }
+        },
     });
 }
 

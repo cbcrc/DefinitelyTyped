@@ -7,7 +7,11 @@
 //                 Cameron Knight <https://github.com/ckknight>
 //                 Kaare Hoff Skovgaard <https://github.com/kastermester>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-// TypeScript Version: 2.8
+// TypeScript Version: 2.9
+
+// Prettified with:
+// $ prettier --parser typescript --tab-width 4 --semi --trailing-comma es5 --write --print-width 120 \
+//   types/{react-relay,relay-runtime}/{,*}/*.ts*
 
 export {
     commitLocalUpdate,
@@ -24,7 +28,16 @@ import * as RelayRuntimeTypes from "relay-runtime";
 // Utility types
 // ~~~~~~~~~~~~~~~~~~~~~
 
-export type FragmentOrRegularProp<T> = T extends { ' $refType': infer U } ? { ' $fragmentRefs': U } : T;
+export interface _RefType<T> {
+    " $refType": T;
+}
+export interface _FragmentRefs<T> {
+    " $fragmentRefs": T;
+}
+
+export type FragmentOrRegularProp<T> = T extends _RefType<infer U>
+    ? _FragmentRefs<U>
+    : T extends ReadonlyArray<_RefType<infer U>> ? ReadonlyArray<_FragmentRefs<U>> : T;
 
 export type MappedFragmentProps<T> = { [K in keyof T]: FragmentOrRegularProp<T[K]> };
 
@@ -75,24 +88,27 @@ export const graphql: GraphqlInterface;
 // ~~~~~~~~~~~~~~~~~~~~~
 // ReactRelayQueryRenderer
 // ~~~~~~~~~~~~~~~~~~~~~
-export interface QueryRendererProps {
+
+export interface QueryRendererProps<T extends RelayRuntimeTypes.OperationBase = RelayRuntimeTypes.OperationDefaults> {
     cacheConfig?: RelayRuntimeTypes.CacheConfig;
     environment: RelayRuntimeTypes.Environment;
     query?: RelayRuntimeTypes.GraphQLTaggedNode | null;
-    render(readyState: ReadyState): React.ReactElement<any> | undefined | null;
-    variables: RelayRuntimeTypes.Variables;
+    render(readyState: ReadyState<T["response"]>): React.ReactElement<any> | undefined | null;
+    variables: T["variables"];
     rerunParamExperimental?: RelayRuntimeTypes.RerunParam;
 }
-export interface ReadyState {
+export interface ReadyState<T extends RelayRuntimeTypes.Variables = RelayRuntimeTypes.Variables> {
     error: Error | undefined | null;
-    props: { [propName: string]: any } | undefined | null;
+    props: T | undefined | null;
     retry?(): void;
 }
-export interface QueryRendererState {
-    readyState: ReadyState;
-}
-export class ReactRelayQueryRenderer extends React.Component<QueryRendererProps, QueryRendererState> {}
-export class QueryRenderer extends ReactRelayQueryRenderer {}
+
+export class ReactRelayQueryRenderer<T extends RelayRuntimeTypes.OperationBase> extends React.Component<
+    QueryRendererProps<T>
+> {}
+export class QueryRenderer<
+    T extends RelayRuntimeTypes.OperationBase = RelayRuntimeTypes.OperationDefaults
+> extends ReactRelayQueryRenderer<T> {}
 
 // ~~~~~~~~~~~~~~~~~~~~~
 // createFragmentContainer
@@ -113,8 +129,8 @@ export interface PageInfo {
     startCursor: string | undefined | null;
 }
 export interface ConnectionData {
-    edges?: any[];
-    pageInfo?: PageInfo;
+    edges?: ReadonlyArray<any>;
+    pageInfo?: Partial<PageInfo>;
 }
 export type RelayPaginationProp = RelayProp & {
     hasMore(): boolean;
@@ -134,9 +150,9 @@ export function FragmentVariablesGetter(
     prevVars: RelayRuntimeTypes.Variables,
     totalCount: number
 ): RelayRuntimeTypes.Variables;
-export interface ConnectionConfig<T> {
+export interface ConnectionConfig<P> {
     direction?: "backward" | "forward";
-    getConnectionFromProps?(props: T): ConnectionData | undefined | null;
+    getConnectionFromProps?(props: P): ConnectionData | undefined | null;
     getFragmentVariables?: typeof FragmentVariablesGetter;
     getVariables(
         props: { [propName: string]: any },
